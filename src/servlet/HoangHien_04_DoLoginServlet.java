@@ -53,7 +53,7 @@ public class HoangHien_04_DoLoginServlet extends HttpServlet {
 	          Connection conn = HoangHien_04_MyUtils.HoangHien_04_getStoredConnection(request);
 	          try {
 	              // Tìm user trong DB.
-	              user = HoangHien_04_DBUtils.HoangHien_04_findUser(conn, username, password);
+	              user = HoangHien_04_DBUtils.HoangHien_04_findUserWithPass(conn, username, password);
 	              
 	              if (user == null) {
 	                  hasError = true;

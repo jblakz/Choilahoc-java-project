@@ -1,5 +1,9 @@
 package utils;
 
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,21 +24,31 @@ public class HoangHien_04_DBUtils {
 	//hay chỉnh sửa dữ liệu trong model và cập nhật vào MySQL
 	
 	//Thao tác trên Model Admin
-	public static HoangHien_04_Admin HoangHien_04_findUser(Connection conn, String username, String password) throws SQLException {
+	public static HoangHien_04_Admin HoangHien_04_findUserWithPass(Connection conn, String username, String password) throws SQLException {
 		 
 	      String sql = "Select * from admins a"
-	              + " where a.username = ? and a.password= ?";
+	              + " where a.username = ?";
+	      
+	      
 	 
 	      PreparedStatement pstm = conn.prepareStatement(sql);
 	      pstm.setString(1, username);
-	      pstm.setString(2, password);
 	      ResultSet rs = pstm.executeQuery();
 	 
 	      if (rs.next()) {
-	    	  int idAdmins = rs.getInt("idAdmins");
+	    	  //Compare generated password from database
+	          byte[] salt = rs.getBytes("salt");
+	          String genPassword = get_SHA_512_SecurePassword(password, salt);
+	          if (!genPassword.equals(rs.getString("genPassword")))
+	          {
+	        	  System.out.println(genPassword +" does not match " + rs.getString("genPassword"));
+	        	  return null;
+	          }
+	          //
+	          int idAdmins = rs.getInt("idAdmins");
 	          String name = rs.getString("name");
 	          String email =rs.getString("email");
-	          HoangHien_04_Admin user = new HoangHien_04_Admin(idAdmins, name, email, username, password);
+	          HoangHien_04_Admin user = new HoangHien_04_Admin(idAdmins, name, email, username, genPassword, salt);
 	          return user;
 	      }
 	      return null;
@@ -53,14 +67,15 @@ public class HoangHien_04_DBUtils {
 	    	  int idAdmins = rs.getInt("idAdmins");
 	          String name = rs.getString("name");
 	          String email =rs.getString("email");
-	          String password = rs.getString("password");
-	          HoangHien_04_Admin user = new HoangHien_04_Admin(idAdmins, name, email, username, password);
+	          String password = rs.getString("genPassword");
+	          byte[] salt = rs.getBytes("salt");
+	          HoangHien_04_Admin user = new HoangHien_04_Admin(idAdmins, name, email, username, password, salt);
 	          return user;
 	      }
 	      return null;
 	  }
-	  public static void HoangHien_04_updateAdmin(Connection conn, HoangHien_04_Admin user) throws SQLException {
-	      String sql = "Update admins set name=?, email=?, password=?"
+	  public static void HoangHien_04_updateAdmin(Connection conn, HoangHien_04_Admin user) throws SQLException, NoSuchAlgorithmException {
+	      String sql = "Update admins set name=?, email=?, genPassword=?, salt = ?"
 	      		+ " where idAdmins=? ";
 	      
 	      PreparedStatement pstm = conn.prepareStatement(sql);
@@ -68,7 +83,8 @@ public class HoangHien_04_DBUtils {
 	      pstm.setString(1, encodeValueForHTML(user.getName()));
 	      pstm.setString(2, encodeValueForHTML(user.getEmail()));
 	      pstm.setString(3, encodeValueForHTML(user.getPassword()));
-	      pstm.setInt(4, user.getIdAdmins());
+	      pstm.setBytes(4, user.getSalt());
+	      pstm.setInt(5, user.getIdAdmins());
 	      pstm.executeUpdate();
 	  }
 	  
@@ -351,6 +367,35 @@ public class HoangHien_04_DBUtils {
 	 
 	      pstm.executeUpdate();
 	  }
+	  
+	  public static byte[] getSalt() throws NoSuchAlgorithmException {
+	        SecureRandom sr = SecureRandom.getInstance("SHA1PRNG");
+	        byte[] salt = new byte[16];
+	        sr.nextBytes(salt);
+	        return salt;
+	    }
+	  
+	  public static String get_SHA_512_SecurePassword(String passwordToHash, byte[] salt){
+		  String generatedPassword = null;
+		      try {
+		           MessageDigest md = MessageDigest.getInstance("SHA-512");
+		           md.update(salt);
+		           byte[] bytes = md.digest(passwordToHash.getBytes("UTF-8"));
+		           StringBuilder sb = new StringBuilder();
+		           for(int i=0; i< bytes.length ;i++){
+		              sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
+		           }
+		           generatedPassword = sb.toString();
+		          } 
+		         catch (NoSuchAlgorithmException e){
+		          e.printStackTrace();
+		         }
+		      	 catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		      return generatedPassword.toUpperCase();
+		  }
 	  
 	  private static String encodeValueForHTML(String input){
 		  String value = "";
