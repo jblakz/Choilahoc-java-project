@@ -8,6 +8,8 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.owasp.esapi.ESAPI;
+
 import servlet.HoangHien_04_ActivitiesListServlet;
 import beans.HoangHien_04_Admin;
 import beans.HoangHien_04_Activity;
@@ -60,12 +62,12 @@ public class HoangHien_04_DBUtils {
 	  public static void HoangHien_04_updateAdmin(Connection conn, HoangHien_04_Admin user) throws SQLException {
 	      String sql = "Update admins set name=?, email=?, password=?"
 	      		+ " where idAdmins=? ";
-	 
+	      
 	      PreparedStatement pstm = conn.prepareStatement(sql);
-	 
-	      pstm.setString(1, user.getName());
-	      pstm.setString(2, user.getEmail());
-	      pstm.setString(3, user.getPassword());
+	      
+	      pstm.setString(1, encodeValueForHTML(user.getName()));
+	      pstm.setString(2, encodeValueForHTML(user.getEmail()));
+	      pstm.setString(3, encodeValueForHTML(user.getPassword()));
 	      pstm.setInt(4, user.getIdAdmins());
 	      pstm.executeUpdate();
 	  }
@@ -109,7 +111,7 @@ public class HoangHien_04_DBUtils {
 	 
 	      PreparedStatement pstm = conn.prepareStatement(sql);
 	 
-	      pstm.setString(1, category.getCatName());
+	      pstm.setString(1, encodeValueForHTML(category.getCatName()));
 	      pstm.setBoolean(2, category.getHide());
 	      pstm.setInt(3, category.getIdCategory());
 	      pstm.executeUpdate();
@@ -121,7 +123,7 @@ public class HoangHien_04_DBUtils {
 	 
 	      PreparedStatement pstm = conn.prepareStatement(sql);
 	 
-	      pstm.setString(1, category.getCatName());
+	      pstm.setString(1, encodeValueForHTML(category.getCatName()));
 	      pstm.setBoolean(2, category.getHide());
 	      
 	      pstm.executeUpdate();
@@ -313,9 +315,9 @@ public class HoangHien_04_DBUtils {
 	    	  pstm.setInt(8, activity.getIdActivities());
 	      }
 	      
-	      pstm.setString(1, activity.getTitle());
-	      pstm.setString(2, activity.getContent());
-	      pstm.setString(3, activity.getSummary());
+	      pstm.setString(1, encodeValueForHTML(activity.getTitle()));
+	      pstm.setString(2, encodeValueForHTML(activity.getContent()));
+	      pstm.setString(3, encodeValueForHTML(activity.getSummary()));
 	      pstm.setTimestamp(4, activity.getTime());
 	      pstm.setInt(5, activity.getIdCategory());
 	      pstm.setInt(6, activity.getIdAdmins());
@@ -329,10 +331,10 @@ public class HoangHien_04_DBUtils {
 	 
 	      PreparedStatement pstm = conn.prepareStatement(sql);
 	      
-	      pstm.setString(1, activity.getTitle());
+	      pstm.setString(1, encodeValueForHTML(activity.getTitle()));
 	      pstm.setBytes(2, activity.getImage());
-	      pstm.setString(3, activity.getContent());
-	      pstm.setString(4, activity.getSummary());
+	      pstm.setString(3, encodeValueForHTML(activity.getContent()));
+	      pstm.setString(4, encodeValueForHTML(activity.getSummary()));
 	      pstm.setTimestamp(5, activity.getTime());
 	      pstm.setInt(6, activity.getIdCategory());
 	      pstm.setInt(7, activity.getIdAdmins());
@@ -348,5 +350,11 @@ public class HoangHien_04_DBUtils {
 	      pstm.setInt(1, idActivities);
 	 
 	      pstm.executeUpdate();
+	  }
+	  
+	  private static String encodeValueForHTML(String input){
+		  String value = "";
+		  value = (String) ESAPI.encoder().encodeForHTML(input);
+		  return value;
 	  }
 }
