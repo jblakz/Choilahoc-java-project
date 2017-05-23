@@ -1,6 +1,7 @@
 package servlet;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -53,11 +54,24 @@ public class HoangHien_04_DoChangeUserInfoServlet extends HttpServlet {
 	      String newPass = (String) request.getParameter("newPass");
 	      String retype = (String) request.getParameter("retype");
 	      
+	      //Băm các thông số password
+	      /*byte[] newSalt = loginedUser.getSalt();
+	      try {
+			newSalt = HoangHien_04_DBUtils.getSalt();
+		} catch (NoSuchAlgorithmException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			errorString = e1.getMessage();
+		}*/
+	      String genOldPass = HoangHien_04_DBUtils.get_SHA_512_SecurePassword(oldPass, loginedUser.getSalt());
+	      String genNewPass = HoangHien_04_DBUtils.get_SHA_512_SecurePassword(newPass, loginedUser.getSalt());
+	      
 	    //Kiểm tra password
 	      //Nếu nhập mật khẩu cũ ko đúng
-	      if(!loginedUser.getPassword().trim().equals(oldPass))
+	      if(!loginedUser.getPassword().equals(genOldPass))
 	      {
 	    	// Báo lỗi.
+	    	  System.out.println("CANNOT UPDATE: "+loginedUser.getPassword() + " does not match "+genOldPass);
 	    	  errorString = "Nhập sai mật khẩu! ";
 	    	  request.getSession().setAttribute("errorString", errorString);
 	    	  request.getSession().removeAttribute("infoString");
@@ -77,19 +91,26 @@ public class HoangHien_04_DoChangeUserInfoServlet extends HttpServlet {
 	      // Trường hợp người dùng không muốn đổi mật khẩu
 	      if(newPass == "" || retype == "")
 	      {
-	    	newPass = loginedUser.getPassword();
+	    	 genNewPass = loginedUser.getPassword();
+	    	 //newSalt = loginedUser.getSalt();
 	      }
 	      HoangHien_04_Admin admin = new HoangHien_04_Admin(loginedUser.getIdAdmins());
 	      admin.setName(name);
 	      admin.setEmail(email);
 	      admin.setUsername(loginedUser.getUsername());
-	      admin.setPassword(newPass);
+	      admin.setPassword(genNewPass);
+	      admin.setSalt(loginedUser.getSalt());
 	      // Các lệnh từ DBUtils
 	      try{HoangHien_04_DBUtils.HoangHien_04_updateAdmin(conn, admin);}
 	      catch (SQLException e) {
               e.printStackTrace();
               errorString = e.getMessage();
-          }
+          } 
+	      catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			errorString = e.getMessage();
+		}
 	   // Lưu thông tin vào request attribute trước khi forward sang views.
 	      request.setAttribute("userInfo", admin);
 	 

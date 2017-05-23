@@ -6,7 +6,8 @@ public class HoangHien_04_Admin {
 	private String name;
 	private String email;
 	private String username;
-	private String password;
+	private String genPassword;
+	private byte[] salt;
 
 	public HoangHien_04_Admin() {
 		super();
@@ -16,13 +17,14 @@ public class HoangHien_04_Admin {
 		this.idAdmins = idAdmins;
 	}
 	public HoangHien_04_Admin(int idAdmins, String name, String email, String username,
-			String password) {
+			String password, byte[] salt) {
 		super();
 		this.idAdmins = idAdmins;
 		this.name = name;
 		this.email = email;
 		this.username = username;
-		this.password = password;
+		this.genPassword = password;
+		this.salt = salt;
 	}
 	public String getName() {
 		return name;
@@ -37,10 +39,10 @@ public class HoangHien_04_Admin {
 		this.email = email;
 	}
 	public String getPassword() {
-		return password;
+		return genPassword;
 	}
 	public void setPassword(String password) {
-		this.password = password;
+		this.genPassword = password;
 	}
 	public int getIdAdmins() {
 		return idAdmins;
@@ -50,5 +52,11 @@ public class HoangHien_04_Admin {
 	}
 	public void setUsername(String username) {
 		this.username = username;
+	}
+	public byte[] getSalt() {
+		return salt;
+	}
+	public void setSalt(byte[] salt) {
+		this.salt = salt;
 	}
 }
